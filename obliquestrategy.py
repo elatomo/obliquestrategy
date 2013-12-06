@@ -15,28 +15,39 @@ import random
 APP_PATH = os.path.dirname(os.path.realpath(__file__))
 STRATEGIES_FILE = os.path.join(APP_PATH, 'data', 'strategies.yml')
 
-def _load(strategies_file):
+# cached files
+_cache = {}
+
+def _load(strategies_file, skip_cache):
     """Load a strategies file.
 
     strategies_file -- YAML file with a list of strategies.
+    skip_cache -- Whether to skip any cached file contents or reload the whole file.
 
-    Returns all list of strategies.
+    Returns a list of all strategies contained in the file.
     """
-    if not os.path.exists(strategies_file):
-        msg = "Can't find strategies file '{0}'".format(STRATEGIES_FILE)
-        raise ValueError(msg)
+    global _cache
+    strategies = _cache.get(strategies_file)
 
-    return yaml.load(open(strategies_file, 'rb'))
+    if not skip_cache and strategies:
+        return strategies
+    else:
+        if not os.path.exists(strategies_file):
+            msg = "Can't find strategies file '{0}'".format(STRATEGIES_FILE)
+            raise ValueError(msg)
+        strategies = yaml.load(open(strategies_file, 'rb'))
+        _cache[strategies_file] = strategies
+        return strategies
 
-def get_random(strategies_file=STRATEGIES_FILE):
+def get_random(strategies_file=STRATEGIES_FILE, skip_cache=False):
     """Get a random oblique strategy.
 
     strategies_file -- YAML file with a list of strategies.
+    skip_cache -- Whether to skip any cached file contents or reload the whole file.
 
     Return the oblique strategy
     """
-    strategies = _load(strategies_file)
-
+    strategies = _load(strategies_file, skip_cache)
     return random.choice(strategies)
 
 def main():
